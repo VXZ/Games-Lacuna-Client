@@ -33,6 +33,7 @@ GetOptions(\%opts,
     'no-fetch',
     'no-vacuum',
     'scan-nearby',
+    'scan=s'
 );
 
 usage() if $opts{h};
@@ -83,6 +84,88 @@ if (-f $db_file) {
     }
 }
 $star_db->{AutoCommit} = 0;
+
+if (exists $opts{scan}) {
+  my $map = $glc->map();
+  my @stars = ();
+  if ($opts{scan} =~ /^\s*(-?\d+)\s*?[x,|:\/\s]\s*(-?\d+)\s*$/) {
+    my ($x, $y) = ($1, $2);
+    @stars = @{ $map->get_stars( $x - 15, $y - 15, $x + 15, $y + 15 )->{'stars'} };
+  } elsif ($opts{scan} =~ /^\s*(-?\d+)\s*?[x,|:\/\s]\s*(-?\d+)\s*?[x,|:\/\s]\s*(\d+)(?:\s*-\s*(\d+))??\s*$/) {
+    my ($x, $y, $r, $r_end) = ($1, $2, $3, $4||$3);
+    $r = 15 if ($r < 15);
+    $r_end = $r if $r_end < $r;
+    #finish the distance ranges
+    my @ranges = ($r);
+    if ($r_end > $r) {
+      push @ranges, ($r = $ranges[-1] + 30) while ($r < $r_end);
+    }
+    for $r (@ranges) {
+      printf "%04u: ", $r;
+      my $pi = 4 * atan2(1, 1);
+      my $d = $r * 2;
+      my $c = $pi * $d;
+      use POSIX 'ceil';
+      my $steps = ceil($c / 30);
+      my $step = 2*$pi / $steps;
+      #if ($steps > 200) {
+      #  print "WARNING: $steps RPCs will be used for this scan. Press enter to confirm, or Ctrl+C to abort.\n";
+      #  <STDIN>;
+      #}
+      for (map {
+        [$x + int cos($step * $_) * $r, $y + int sin($step * $_) * $r]
+      } 0..($steps - 1)) {
+        local $| = 1;
+        print '.';
+        #push @stars, @{ $map->get_stars( $_->[0]-15, $_->[1]-15, $_->[0]+15, $_->[1]+15 )->{'stars'} };
+        eval { push @stars, @{ $map->get_stars( $_->[0]-15, $_->[1]-15, $_->[0]+15, $_->[1]+15 )->{'stars'} } };
+        while ($@ =~ /^RPC Error \(1010\)/) {
+          print 'z';
+          sleep 10;
+          eval { push @stars, @{ $map->get_stars( $_->[0]-15, $_->[1]-15, $_->[0]+15, $_->[1]+15 )->{'stars'} } };
+        }
+        die $@ if ($@);
+        ##need real throttling
+        #use Time::HiRes 'sleep'; sleep .75;
+      }
+      print "\n";
+    }
+  } else {
+    die 'Invalid scan target';
+  }
+  my @bodies = ();
+  for my $star (@stars) {
+    if (my $row = star_exists($star->{x}, $star->{y})) {
+      if ((($row->{name}||q{}) ne $star->{name})
+          or (($row->{color}||q{}) ne $star->{color})
+          or (($row->{zone}||q{}) ne $star->{zone})) {
+        update_star($star)
+      } else {
+        mark_star_checked(@{$row}{qw/x y/});
+      }
+    } else {
+      insert_star($star);
+    }
+    if ($star->{bodies} and @{$star->{bodies}}) {
+      for my $body (@{$star->{bodies}}) {
+        push @bodies, $body;
+        if (my $row = orbital_exists($body->{x}, $body->{y})) {
+          if ((($row->{type}||q{}) ne $body->{type})
+              or (($row->{name}||q{}) ne $body->{name})
+              or ($body->{empire} and ($row->{empire_id}||q{}) ne $body->{empire}{id})
+              or (defined($body->{size}) and ($row->{size}||q{}) ne $body->{size}) ) {
+            update_orbital($body);
+          } else {
+            mark_orbital_checked(@{$body}{qw/x y/});
+          }
+        } else {
+          insert_orbital($body);
+        }
+      }
+    }
+  }
+  print 'Found ' . @bodies . ' bodies orbiting ' . @stars . " stars.\n";
+}
 
 if ($opts{'merge-db'}) {
     unless (-f $opts{'merge-db'}) {
@@ -647,6 +730,9 @@ Options:
                            passed multiple times to indicate several planets.
                            If this is not specified, all relevant colonies will
                            be inspected.
+  --scan <x>,<y>         - Scan a 30x30 square of the map.
+  --scan <x>,<y>/<r>     - Scan a ring of 30x30 squares.
+  --scan <x>,<y>/<r>-<r> - Scan rings of 30x30 squares in a certain range.
 END
     exit 1;
 }
