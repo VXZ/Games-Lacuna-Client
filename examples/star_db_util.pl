@@ -33,7 +33,8 @@ GetOptions(\%opts,
     'no-fetch',
     'no-vacuum',
     'scan-nearby',
-    'scan=s'
+    'scan=s',
+    'full-throttle'
 );
 
 usage() if $opts{h};
@@ -116,17 +117,27 @@ if (exists $opts{scan}) {
         [$x + int cos($step * $_) * $r, $y + int sin($step * $_) * $r]
       } 0..($steps - 1)) {
         local $| = 1;
-        print '.';
-        #push @stars, @{ $map->get_stars( $_->[0]-15, $_->[1]-15, $_->[0]+15, $_->[1]+15 )->{'stars'} };
-        eval { push @stars, @{ $map->get_stars( $_->[0]-15, $_->[1]-15, $_->[0]+15, $_->[1]+15 )->{'stars'} } };
-        while ($@ =~ /^RPC Error \(1010\)/) {
-          print 'z';
-          sleep 10;
+        my $attempts = 0;
+        do {
+          if ($@) {
+            if ($1 == 1010) {
+              print 'z';
+              sleep 10;
+            } else {
+              print 'x';
+              sleep 1;
+            }
+          }
+          $attempts++;
           eval { push @stars, @{ $map->get_stars( $_->[0]-15, $_->[1]-15, $_->[0]+15, $_->[1]+15 )->{'stars'} } };
-        }
+        } while ($attempts <= 6 && $@ =~ /^RPC Error \((1010)\)|^malformed JSON /);
         die $@ if ($@);
-        ##need real throttling
-        #use Time::HiRes 'sleep'; sleep .75;
+        print '.';
+        #need real throttling
+        unless ($opts{'full-throttle'}) {
+          use Time::HiRes 'sleep';
+          sleep .8;
+        }
       }
       print "\n";
     }
@@ -733,6 +744,7 @@ Options:
   --scan <x>,<y>         - Scan a 30x30 square of the map.
   --scan <x>,<y>/<r>     - Scan a ring of 30x30 squares.
   --scan <x>,<y>/<r>-<r> - Scan rings of 30x30 squares in a certain range.
+  --full-throttle        - Scan as fast as possible.
 END
     exit 1;
 }
