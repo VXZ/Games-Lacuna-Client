@@ -14,11 +14,13 @@ use Games::Lacuna::Client ();
 my $planet_name;
 my $x_loc = 5;
 my $y_loc = -5;
+my $keep = 0;
 
 GetOptions(
 	'planet=s' => \$planet_name,
 	'x=i' => \$x_loc,
 	'y=i' => \$y_loc,
+  'keep=i' => \$keep,
 );
 
 my $cfg_file = shift(@ARGV) || 'lacuna.yml';
@@ -102,7 +104,7 @@ foreach my $planet_id ( sort keys %$planets ) {
 		
 	if (exists $bb->{$buildname}) {
 		while(1) {
-            last if $waste_stored < $waste_cost;
+            last if $waste_stored < $waste_cost + $keep;
             $waste_stored -= $waste_cost;
             
 			print "$buildname purging $waste_cost trash, ";
@@ -142,6 +144,7 @@ CONFIG_FILE	 defaults to 'lacuna.yml'
 --planet is the planet you want to remove trash from.
 --x is the x-coordinate of the building location, defaults to 5
 --y is the y-coordinate of the building location, defaults to -5
+--keep is the minimum amount of waste to not destroy, defaults to 0
 
 You must at least have access to the Junk Henge to use this script.
 
