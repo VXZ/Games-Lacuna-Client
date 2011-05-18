@@ -162,7 +162,6 @@ sub _c_ {
 }
 
 __DATA__
-%YAML 1.1
 ---
 Decorative Recipes:
   Beach 1 (Land E):
@@ -488,4 +487,3 @@ Functional Recipes:
     quantity:
       magnetite: 1
       uraninite: 1
-...
