@@ -40,6 +40,7 @@ unless ( $cfg_file and -e $cfg_file ) {
 
 my $client = Games::Lacuna::Client->new(
 	cfg_file => $cfg_file,
+	prompt_captcha => 1,
 	# debug    => 1,
 );
 
