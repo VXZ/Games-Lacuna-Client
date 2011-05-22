@@ -166,6 +166,8 @@ while (!$finished) {
         );
 
         output("Starting up at " . localtime() . "\n");
+        my $status = $glc->empire->get_status;
+        die "RPC count of $glc->{rpc_count} exceeds safe threshold\n" if defined $glc->{rpc_count} && $glc->{rpc_count} > $status->{server}->{rpc_limit} * .9;
         get_status();
         do_digs() if $opts{'do-digs'};
         send_excavators() if $opts{'send-excavators'} and $star_db;
