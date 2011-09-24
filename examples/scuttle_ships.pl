@@ -53,6 +53,6 @@ die 'No matching ships can be scuttled' unless @ships;
 for (0..$#ships) {
   say $_+1 . '/' . scalar @ships;
   $port->scuttle_ship($ships[$_]);
-  sleep 1.1; #change this to make use of the rpc limit info returned by the server
+  sleep 1; #change this to make use of the rpc limit info returned by the server
 }
 
