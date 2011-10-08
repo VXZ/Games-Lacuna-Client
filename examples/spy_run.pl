@@ -12,12 +12,14 @@ my $planet_name;
 my $target;
 my $assignment;
 my $first = 'best';
+my $max;
 
 GetOptions(
     'from=s'       => \$planet_name,
     'target=s'     => \$target,
     'assignment=s' => \$assignment,
     'first=s'      => \$first,
+    'max=i'        => \$max,
 );
 
 usage() if !$planet_name || !$target || !$assignment;
@@ -103,7 +105,10 @@ sub sort_spies {
     }
 }
 
-for my $spy (sort sort_spies @spies) {
+@spies = sort sort_spies @spies;
+splice @spies, $max if defined $max && $max >= 1 && $max < @spies;
+
+for my $spy (@spies) {
     my $return;
     
     print "Assigning $spy->{name} ($spy->{score}) to $assignment on $target...";
@@ -143,6 +148,8 @@ CONFIG_FILE  defaults to 'lacuna.yml'
 
 --first should be "best" or "worst" depending on which order you want
     to use your spies.  default is "best"
+
+--max is the maximum number of spies to run.
 
 It only needs to be long enough to uniquely match a single available mission,
 e.g. "gather op" will successfully match "Gather Operative Intelligence"
