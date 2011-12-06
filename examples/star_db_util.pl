@@ -291,7 +291,7 @@ unless ($opts{'no-fetch'}) {
     my $empire = $glc->empire->get_status->{empire};
 
     # reverse hash, to key by name instead of id
-    my %planets = reverse %{ $empire->{planets} };
+    my %planets = map { $empire->{planets}{$_}, $_ } keys %{$empire->{planets}};
 
     # Scan each planet
     for my $planet_name (keys %planets) {
