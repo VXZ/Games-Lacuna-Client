@@ -52,7 +52,7 @@ foreach my $name ( sort keys %$planets ) {
     print "$name\n";
     print "=" x length $name;
     print "\n";
-    
+
     for my $building (sort { $a->{pending_build}{seconds_remaining} <=> $b->{pending_build}{seconds_remaining} } @build) {
         printf "%s: %s\n",
             $building->{name},
