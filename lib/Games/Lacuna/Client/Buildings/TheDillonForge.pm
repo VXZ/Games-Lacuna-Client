@@ -1,4 +1,4 @@
-package Games::Lacuna::Client::Buildings::BlackHoleGenerator;
+package Games::Lacuna::Client::Buildings::TheDillonForge;
 use 5.0080000;
 use strict;
 use warnings;
@@ -11,8 +11,9 @@ our @ISA = qw(Games::Lacuna::Client::Buildings);
 
 sub api_methods {
   return {
-    generate_singularity  => { default_args => [qw(session_id building_id)] },
-    get_actions_for       => { default_args => [qw(session_id building_id)] },
+    make_plan  => { default_args => [qw(session_id building_id)] },
+    split_plan => { default_args => [qw(session_id building_id)] },
+    subsidize  => { default_args => [qw(session_id building_id)] },
   };
 }
 
@@ -23,7 +24,7 @@ __END__
 
 =head1 NAME
 
-Games::Lacuna::Client::Buildings::BlackHoleGenerator - Black Hole Generator
+Games::Lacuna::Client::Buildings::TheDillonForge - The Dillon Forge
 
 =head1 SYNOPSIS
 
